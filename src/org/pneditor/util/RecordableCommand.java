@@ -14,25 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.pneditor.petrinet.xml;
+package org.pneditor.util;
 
-import javax.xml.bind.annotation.XmlElement;
-
+import org.pneditor.petrinet.Element;
 /**
  *
- * @author Martin Riesz <riesz.martin at gmail.com>
+ * @author Ladislas Ducerf <ladislas.ducerf at gmail.com>
  */
-public class XmlPlace extends XmlNode {
+public interface RecordableCommand extends Command{
 
-    @XmlElement(name = "label")
-    public String label;
-
-    @XmlElement(name = "tokens")
-    public int tokens;
-
-    @XmlElement(name = "isStatic")
-    public boolean isStatic;
-
-    @XmlElement(name = "tokenLimit")
-    public int tokenLimit;
+	public Element getRecordedElement();
+	
 }

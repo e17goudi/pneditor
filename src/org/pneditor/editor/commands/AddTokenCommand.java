@@ -16,15 +16,16 @@
  */
 package org.pneditor.editor.commands;
 
+import org.pneditor.petrinet.Element;
 import org.pneditor.petrinet.Marking;
 import org.pneditor.petrinet.PlaceNode;
-import org.pneditor.util.Command;
+import org.pneditor.util.RecordableCommand;
 
 /**
  *
  * @author Martin Riesz <riesz.martin at gmail.com>
  */
-public class AddTokenCommand implements Command {
+public class AddTokenCommand implements RecordableCommand {
 
     private PlaceNode placeNode;
     private Marking marking;
@@ -34,12 +35,15 @@ public class AddTokenCommand implements Command {
         this.marking = marking;
     }
 
+    private int oldValue;
+    
     public void execute() {
+    	oldValue = marking.getTokens(placeNode);
         marking.setTokens(placeNode, marking.getTokens(placeNode) + 1);
     }
 
     public void undo() {
-        new RemoveTokenCommand(placeNode, marking).execute();
+        marking.setTokens(placeNode, oldValue);
     }
 
     public void redo() {
@@ -50,5 +54,9 @@ public class AddTokenCommand implements Command {
     public String toString() {
         return "Add token";
     }
+
+	public Element getRecordedElement() {
+		return placeNode;
+	}
 
 }

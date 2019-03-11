@@ -119,6 +119,15 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         return undoManager;
     }
 
+    // Macro manager - per tab
+    protected RecordMacroAction recordMacro = new RecordMacroAction(this);
+    protected PlayMacroAction playMacro = new PlayMacroAction(this);
+    private MacroManager macroManager = new MacroManager(this, playMacro); 
+    
+    public MacroManager getMacroManager() {
+        return macroManager;
+    }
+    
     // Current directory - per application
     private File currentDirectory;
 
@@ -285,7 +294,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
 
     //per application
     private JToggleButton select, place, transition, arc, token;
-    private Action setLabel, setTokens, setArcMultiplicity, setArcInhibitory, setArcReset, delete;
+    private Action setLabel, setTokens, setArcMultiplicity, setArcInhibitory, setArcReset, delete, setTokenLimit;
     private Action setPlaceStatic;
     private Action addSelectedTransitionsToSelectedRoles;
     private Action removeSelectedTransitionsFromSelectedRoles;
@@ -310,6 +319,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         canvas.repaint();
         enableOnlyPossibleActions();
         getRoleEditor().refreshSelected();
+        getMacroManager().refreshPlayIcon();
     }
 
     public void repaintCanvas() {
@@ -317,6 +327,9 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
     }
 
     private void enableOnlyPossibleActions() {
+    	
+    	
+    	
         boolean isDeletable = clickedElement != null
                 && !(clickedElement instanceof ReferencePlace)
                 || !selection.isEmpty()
@@ -335,14 +348,26 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         boolean roleSelected = !roleEditor.getSelectedElements().isEmpty();
         boolean isParent = !document.petriNet.isCurrentSubnetRoot();
         boolean isPtoT = false;
+
+        boolean macroCurrentlyRecording = getMacroManager().getRecording();
+        boolean macroExists = (getMacroManager().getRecordedCommandsNumber()!=0 );
+        
+        boolean isStaticPlaceNode = false;
+        boolean isLimitedPlaceNode = false;
+      
         boolean is = clickedElement instanceof Transition;
+        
+        if (isPlaceNode) {
+        	isStaticPlaceNode = ((PlaceNode) clickedElement).isStatic();
+        	isLimitedPlaceNode = ((PlaceNode) clickedElement).getTokenLimit()!=0;
+        }
+        
 
         if (isArc) {
             Arc test;
             test = (Arc) clickedElement;
             isPtoT = test.isPlaceToTransition();
         }
-
         cutAction.setEnabled(isCutable);
         copyAction.setEnabled(isCopyable);
         pasteAction.setEnabled(isPastable);
@@ -353,6 +378,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         setArcReset.setEnabled(isPtoT);
         setTokens.setEnabled(isPlaceNode);
         setLabel.setEnabled(isPlaceNode || isTransitionNode);
+        setTokenLimit.setEnabled(!isStaticPlaceNode);
         addSelectedTransitionsToSelectedRoles.setEnabled((isTransitionNode || areTransitionNodes) && roleSelected);
         removeSelectedTransitionsFromSelectedRoles.setEnabled((isTransitionNode || areTransitionNodes) && roleSelected);
         convertTransitionToSubnet.setEnabled(isTransition || areTransitions || isSubnet || areSubnets);
@@ -362,8 +388,14 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         closeSubnet.setEnabled(isParent);
         undo.setEnabled(getUndoManager().isUndoable());
         redo.setEnabled(getUndoManager().isRedoable());
+
+        setPlaceStatic.setEnabled(!isLimitedPlaceNode);
+        
+        playMacro.setEnabled(macroExists&(!macroCurrentlyRecording));
+
         setPlaceStatic.setEnabled(isPlaceNode);
         fireAction1.setEnabled(is);
+
     }
 
     @Override
@@ -452,6 +484,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         Action quit = new QuitAction(this);
         setLabel = new SetLabelAction(this);
         setTokens = new SetTokensAction(this);
+        setTokenLimit = new SetTokenLimitAction(this);
         setPlaceStatic = new SetPlaceStaticAction(this);
         setArcMultiplicity = new SetArcMultiplicityAction(this);
         setArcInhibitory = new SetArcInhibitoryAction(this);
@@ -524,7 +557,11 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         toolBar.addSeparator();
         toolBar.add(addSelectedTransitionsToSelectedRoles);
         toolBar.add(removeSelectedTransitionsFromSelectedRoles);
-
+        toolBar.addSeparator();
+        
+        toolBar.add(recordMacro);
+        toolBar.add(playMacro);
+        
         JMenuBar menuBar = new JMenuBar();
         mainFrame.setJMenuBar(menuBar);
 
@@ -585,6 +622,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         elementMenu.add(setLabel);
         elementMenu.addSeparator();
         elementMenu.add(setTokens);
+        elementMenu.add(setTokenLimit);
         elementMenu.add(setPlaceStatic);
         elementMenu.addSeparator();
         elementMenu.add(setArcMultiplicity);
@@ -609,6 +647,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
 
         placePopup = new JPopupMenu();
         placePopup.add(setLabel);
+        placePopup.add(setTokenLimit);
         placePopup.add(setTokens);
         placePopup.add(setPlaceStatic);
         placePopup.addSeparator();
@@ -616,8 +655,10 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         placePopup.add(copyAction);
         placePopup.add(delete);
 
+
         transitionPopup = new JPopupMenu();
         transitionPopup.add(setLabel);
+        
         transitionPopup.add(convertTransitionToSubnet);
         transitionPopup.add(addSelectedTransitionsToSelectedRoles);
         transitionPopup.add(removeSelectedTransitionsFromSelectedRoles);
@@ -636,6 +677,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         subnetPopup = new JPopupMenu();
         subnetPopup.add(openSubnet).setFont(boldFont);
         subnetPopup.add(setLabel);
+        //subnetPopup.add(setTokenLimit);
         subnetPopup.add(replaceSubnet);
         subnetPopup.add(saveSubnetAs);
         subnetPopup.add(convertTransitionToSubnet);

@@ -17,37 +17,34 @@
 package org.pneditor.editor.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.AbstractAction;
+import javax.swing.KeyStroke;
 import org.pneditor.editor.Root;
-import org.pneditor.editor.commands.SetUnsetPlaceStaticCommand;
-import org.pneditor.petrinet.PlaceNode;
+import org.pneditor.editor.commands.PlayMacroCommand;
+import org.pneditor.petrinet.Element;
 import org.pneditor.util.GraphicsTools;
 
 /**
  *
- * @author Martin Riesz <riesz.martin at gmail.com>
+ * @author Ladislas Ducerf <ladislas.ducerf at gmail.com>
  */
-public class SetPlaceStaticAction extends AbstractAction {
+public class PlayMacroAction extends AbstractAction {
 
     private Root root;
 
-    public SetPlaceStaticAction(Root root) {
+    public PlayMacroAction(Root root) {
         this.root = root;
-        String name = "Set/unset place static";
+        String name = "Play macro";
         putValue(NAME, name);
+        putValue(SMALL_ICON, GraphicsTools.getIcon("pneditor/macroPlay.gif"));
         putValue(SHORT_DESCRIPTION, name);
-        putValue(SMALL_ICON, GraphicsTools.getIcon("pneditor/staticplace.gif"));
         setEnabled(false);
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (root.getClickedElement() instanceof PlaceNode) {
-            PlaceNode placeNode = (PlaceNode) root.getClickedElement();
-            if (placeNode.getTokenLimit()==0)
-            {
-            	root.getUndoManager().executeCommand(new SetUnsetPlaceStaticCommand(placeNode));
-            }
-        }
+    	root.getUndoManager().executeCommand(new PlayMacroCommand(root.getMacroManager()));
     }
-
 }

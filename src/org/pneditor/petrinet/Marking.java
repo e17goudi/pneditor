@@ -129,7 +129,9 @@ public class Marking {
         if (place.isStatic()) {
             petriNet.getInitialMarking().map.put(place, tokens);
         } else {
-            this.map.put(place, tokens);
+        	if (tokenLimitCompliant(placeNode, tokens)) {
+        		this.map.put(place, tokens);
+        	}
         }
     }
 
@@ -160,6 +162,12 @@ public class Marking {
                             }
                         }
                     }
+                } else { // arc is from transition to place
+                	int tokens = getTokens(arc.getPlaceNode());
+                	if (!tokenLimitCompliant(arc.getPlaceNode(), tokens + arc.getMultiplicity())) {
+                		isEnabled = false;
+                		break;
+                	}
                 }
             }
         } finally {
@@ -167,6 +175,25 @@ public class Marking {
         }
         return isEnabled;
     }
+    
+    /**
+     * Check that a given token number is valid on a given place
+     *
+     * @param placeNode placeNode to do the check on
+     * @param requestedTokens number of tokens wanted to be checked
+     * @return false if the given numbers of token is invalid, otherwise true
+     */
+    public boolean tokenLimitCompliant(PlaceNode placeNode, int requestedTokens) {
+    	boolean compliant = true;
+    	if (placeNode.getTokenLimit()> 0) {
+    		if (requestedTokens > placeNode.getTokenLimit()) {
+    			compliant = false;
+    		}
+    	}
+    	return compliant;
+    }
+
+
 //Overload method
     
     public boolean isEnabled(Transition transition,int i) {
@@ -197,6 +224,7 @@ public class Marking {
         }
         return isEnabled;
     }
+  
     /**
      * Fires a transition in this marking. Changes this marking.
      *
@@ -235,7 +263,8 @@ public class Marking {
         }
         return success;
     }
-
+    
+    //TODO: Check for token limit ?
     public boolean canBeUnfired(Transition transition) {
         boolean canBeUnfired = true;
         lock.readLock().lock();

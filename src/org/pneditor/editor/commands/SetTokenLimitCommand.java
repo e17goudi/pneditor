@@ -16,33 +16,41 @@
  */
 package org.pneditor.editor.commands;
 
-import org.pneditor.petrinet.Element;
 import org.pneditor.petrinet.Marking;
 import org.pneditor.petrinet.PlaceNode;
-import org.pneditor.util.RecordableCommand;
+import org.pneditor.util.Command;
 
 /**
  *
- * @author Martin Riesz <riesz.martin at gmail.com>
+ * @author Ladislas Ducerf <ladislas.ducerf at gmail.com>
  */
-public class RemoveTokenCommand implements RecordableCommand {
+public class SetTokenLimitCommand implements Command {
 
     private PlaceNode placeNode;
+    private int newLimitValue;
     private Marking marking;
+    
 
-    public RemoveTokenCommand(PlaceNode placeNode, Marking marking) {
+    public SetTokenLimitCommand(PlaceNode placeNode, int limit, Marking marking) {
         this.placeNode = placeNode;
+        this.newLimitValue = limit;
         this.marking = marking;
     }
 
+    private int oldLimitValue;
+    private int oldTokenValue;
+    
+    
     public void execute() {
-        if (marking.getTokens(placeNode) >= 1) {
-            marking.setTokens(placeNode, marking.getTokens(placeNode) - 1);
-        }
+        this.oldTokenValue = marking.getTokens(placeNode);
+        this.oldLimitValue = placeNode.getTokenLimit();
+        
+        placeNode.setTokenLimit(newLimitValue);
     }
 
     public void undo() {
-        new AddTokenCommand(placeNode, marking).execute();
+        this.placeNode.setTokenLimit(oldLimitValue);
+        this.marking.setTokens(this.placeNode, this.oldTokenValue);
     }
 
     public void redo() {
@@ -51,11 +59,6 @@ public class RemoveTokenCommand implements RecordableCommand {
 
     @Override
     public String toString() {
-        return "Remove token";
+        return "Set/unset place node token limit";
     }
-
-	public Element getRecordedElement() {
-		return placeNode;
-	}
-
 }
