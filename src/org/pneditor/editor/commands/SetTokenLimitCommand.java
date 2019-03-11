@@ -16,34 +16,41 @@
  */
 package org.pneditor.editor.commands;
 
-import org.pneditor.petrinet.Element;
 import org.pneditor.petrinet.Marking;
 import org.pneditor.petrinet.PlaceNode;
-import org.pneditor.util.RecordableCommand;
+import org.pneditor.util.Command;
 
 /**
  *
- * @author Martin Riesz <riesz.martin at gmail.com>
+ * @author Ladislas Ducerf <ladislas.ducerf at gmail.com>
  */
-public class AddTokenCommand implements RecordableCommand {
+public class SetTokenLimitCommand implements Command {
 
     private PlaceNode placeNode;
+    private int newLimitValue;
     private Marking marking;
+    
 
-    public AddTokenCommand(PlaceNode placeNode, Marking marking) {
+    public SetTokenLimitCommand(PlaceNode placeNode, int limit, Marking marking) {
         this.placeNode = placeNode;
+        this.newLimitValue = limit;
         this.marking = marking;
     }
 
-    private int oldValue;
+    private int oldLimitValue;
+    private int oldTokenValue;
+    
     
     public void execute() {
-    	oldValue = marking.getTokens(placeNode);
-        marking.setTokens(placeNode, marking.getTokens(placeNode) + 1);
+        this.oldTokenValue = marking.getTokens(placeNode);
+        this.oldLimitValue = placeNode.getTokenLimit();
+        
+        placeNode.setTokenLimit(newLimitValue);
     }
 
     public void undo() {
-        marking.setTokens(placeNode, oldValue);
+        this.placeNode.setTokenLimit(oldLimitValue);
+        this.marking.setTokens(this.placeNode, this.oldTokenValue);
     }
 
     public void redo() {
@@ -52,11 +59,6 @@ public class AddTokenCommand implements RecordableCommand {
 
     @Override
     public String toString() {
-        return "Add token";
+        return "Set/unset place node token limit";
     }
-
-	public Element getRecordedElement() {
-		return placeNode;
-	}
-
 }
