@@ -301,7 +301,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
     private Action convertTransitionToSubnet;
     private Action replaceSubnet;
     private Action saveSubnetAs;
-    private Action cutAction, copyAction, pasteAction, selectAllAction;
+    private Action cutAction, copyAction, pasteAction, selectAllAction,fireAction1;
 
     //per application
     private Action openSubnet;
@@ -348,18 +348,20 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         boolean roleSelected = !roleEditor.getSelectedElements().isEmpty();
         boolean isParent = !document.petriNet.isCurrentSubnetRoot();
         boolean isPtoT = false;
+
         boolean macroCurrentlyRecording = getMacroManager().getRecording();
         boolean macroExists = (getMacroManager().getRecordedCommandsNumber()!=0 );
         
         boolean isStaticPlaceNode = false;
         boolean isLimitedPlaceNode = false;
+      
+        boolean is = clickedElement instanceof Transition;
         
         if (isPlaceNode) {
         	isStaticPlaceNode = ((PlaceNode) clickedElement).isStatic();
         	isLimitedPlaceNode = ((PlaceNode) clickedElement).getTokenLimit()!=0;
         }
         
-
 
         if (isArc) {
             Arc test;
@@ -386,9 +388,14 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         closeSubnet.setEnabled(isParent);
         undo.setEnabled(getUndoManager().isUndoable());
         redo.setEnabled(getUndoManager().isRedoable());
+
         setPlaceStatic.setEnabled(!isLimitedPlaceNode);
         
         playMacro.setEnabled(macroExists&(!macroCurrentlyRecording));
+
+        setPlaceStatic.setEnabled(isPlaceNode);
+        fireAction1.setEnabled(is);
+
     }
 
     @Override
@@ -493,6 +500,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         copyAction = new CopyAction(this);
         pasteAction = new PasteAction(this);
         selectAllAction = new SelectAllAction();
+        fireAction1 = new FireAction(this,0);   // initializes to zero
 
         Action selectTool_SelectionAction = new SelectionSelectToolAction(this);
         Action selectTool_PlaceAction = new PlaceSelectToolAction(this);
@@ -658,6 +666,7 @@ public class Root implements WindowListener, ListSelectionListener, SelectionCha
         transitionPopup.add(cutAction);
         transitionPopup.add(copyAction);
         transitionPopup.add(delete);
+        transitionPopup.add(fireAction1);
 
         Font boldFont = new Font(Font.SANS_SERIF, Font.BOLD, 12);
 

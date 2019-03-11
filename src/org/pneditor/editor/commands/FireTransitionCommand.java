@@ -30,6 +30,18 @@ public class FireTransitionCommand implements RecordableCommand {
 
     private Transition transition;
     private Marking marking;
+    private int _i= 1;
+    /**
+     * Overload the fireTransitionCommand 
+     * @param transition : the transition activated
+     * @param marking 
+     * @param i  : the number of tokens put by the user
+     */
+    public FireTransitionCommand(Transition transition, Marking marking, int i) {
+        this.transition = transition;
+        this.marking = marking;
+        this._i=i;
+    }
 
     public FireTransitionCommand(Transition transition, Marking marking) {
         this.transition = transition;
@@ -37,14 +49,17 @@ public class FireTransitionCommand implements RecordableCommand {
     }
 
     public void execute() {
-        if (marking.isEnabled(transition)) {
-            marking.fire(transition);
+        if (marking.isEnabled(transition,_i)) {
+            marking.fire(transition,_i);
         }
     }
-
+/**
+ * 
+ * Marking receiver Call and UNDO management.
+ */
     public void undo() {
-        if (marking.canBeUnfired(transition)) {
-            marking.undoFire(transition);
+        if (marking.canBeUnfired(transition,_i)) {
+            marking.undoFire(transition,_i);
         }
     }
 
